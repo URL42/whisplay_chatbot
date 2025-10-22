@@ -1,102 +1,145 @@
-# Whisplay-AI-Chatbot
+# Whisplay Chatbot (All Python Edition)
 
-<img src="https://docs.pisugar.com/img/whisplay_logo@4x-8.png" alt="Whisplay AI Chatbot" width="200" />
+Turn a Raspberry Pi Zero 2 W + PiSugar Whisplay HAT into a pocketable AI buddy.  
+Hold the button, speak your mind, and the bot answers back with a playful persona, animated LEDs, scrolling text, and synthesized voice powered by OpenAI GPT-5-mini.
 
-This is a pocket-sized AI chatbot device built using a Raspberry Pi Zero 2w. Just press the button, speak, and it talks back—like a futuristic walkie-talkie with a mind of its own.
+> ⚠️ Fun project only. This is not a safety-critical device or a financial oracle.
 
-Test Video Playlist:
-[https://www.youtube.com/watch?v=lOVA0Gui-4Q](https://www.youtube.com/playlist?list=PLpTS9YM-tG_mW5H7Xs2EO0qvlAI-Jm1e_)
-
-Tutorial:
-[https://www.youtube.com/watch?v=Nwu2DruSuyI](https://www.youtube.com/watch?v=Nwu2DruSuyI)
+---
 
 ## Hardware
 
-- Raspberry Pi zero 2w
-- PiSugar Whisplay HAT (including LCD screen, on-board speaker and microphone)
-- PiSugar 3 1200mAh
+- Raspberry Pi Zero 2 W (Raspbian/Raspberry Pi OS Bookworm recommended)
+- PiSugar Whisplay HAT (LCD, mic, speaker, RGB LED, button)
+- Optional: PiSugar battery pack (not required for development/simulation)
+- MicroSD card (16 GB+) and reliable 5 V power source
 
-## Drivers
+---
 
-You need to firstly install the audio drivers for the Whisplay HAT. Follow the instructions in the [Whisplay HAT repository](https://github.com/PiSugar/whisplay).
+## Project Highlights
 
-## Installation Steps
+- **Single-language stack** – Pure Python (`asyncio` everywhere) with uv/`pyproject.toml`.
+- **Personality engine** – Three built-in personas (Arcade Ally, Cosmic Companion, Byte-Sized Bard) with LED colour themes and playful prompts.
+- **Fun idle loop** – Periodic hints and tips when the device is waiting for your next question.
+- **Speech pipeline** – SoX for capture, OpenAI GPT-5-mini for STT/LLM/TTS, mpg123 for playback.
+- **Simulation mode** – Run the full flow on macOS/Linux dev machines (keyboard triggers replace the Whisplay button).
+- **History & continuity** – Recent conversations stored under `data/history.json` to give replies some memory.
 
-1. Clone the repository:
+---
+
+## Quickstart (Simulation Mode)
+
+```bash
+uv sync --all-extras
+cp .env.example .env
+echo "OPENAI_API_KEY=sk-your-key" >> .env
+uv run whisplay-chatbot simulate
+```
+
+Press `Enter` once to simulate a button press, then again to release. Watch the terminal for logs and check `data/` for generated audio if you enabled simulation dumps.
+
+---
+
+## Installing on Raspberry Pi
+
+1. **Prepare the Pi**
+   ```bash
+   sudo apt update
+   sudo apt install -y python3.11-full python3-pip sox mpg123 git
+   ```
+
+2. **Clone & install**
    ```bash
    git clone https://github.com/PiSugar/whisplay-ai-chatbot.git
    cd whisplay-ai-chatbot
+   uv sync --all-extras
    ```
-2. Install dependencies:
-   ```bash
-   bash install_dependencies.sh
-   source ~/.bashrc
-   ```
-   Running `source ~/.bashrc` is necessary to load the new environment variables.
-3. Create a `.env` file based on the `.env.template` file and fill in the necessary environment variables.
-4. Build the project:
-   ```bash
-   bash build.sh
-   ```
-5. Start the chatbot service:
-   ```bash
-   bash run_chatbot.sh
-   ```
-6. Optionally, set up the chatbot service to start on boot:
-   ```bash
-   sudo bash startup.sh
-   ```
-   Please note that this will disable the graphical interface and set the system to multi-user mode, which is suitable for headless operation.
-   You can find the output logs at `chatbot.log`. Running `tail -f chatbot.log` will also display the logs in real-time.
 
-## Build After Code Changes
+3. **Environment**
+   ```bash
+   cp .env.example .env
+   nano .env   # add OpenAI key and any overrides
+   ```
 
-If you make changes to the node code or just pull the new code from this repository, you need to rebuild the project. You can do this by running:
+4. **Run**
+   ```bash
+   uv run whisplay-chatbot run
+   ```
+
+   Hold the Whisplay button, speak, release, and enjoy!
+
+---
+
+## Systemd Service (Headless Boot)
+
+Create `/etc/systemd/system/whisplay-chatbot.service`:
+
+```ini
+[Unit]
+Description=Whisplay AI Chatbot
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/whisplay-ai-chatbot
+EnvironmentFile=/home/pi/whisplay-ai-chatbot/.env
+ExecStart=/home/pi/.local/bin/uv run whisplay-chatbot run
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable it:
 
 ```bash
-bash build.sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now whisplay-chatbot
 ```
 
-If there's new third-party libraries to the python code, make sure to install them in global environment with `--break-system-packages`.
-```
-cd python
-pip install -r requirements.txt --break-system-packages
-```
+Logs stream under `journalctl -u whisplay-chatbot -f`.
 
-## Update Environment Variables
+---
 
-If you need to update the environment variables, you can edit the `.env` file directly. After making changes, please restart the chatbot service with:
+## Configuration
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | GPT-5-mini API key | **required** |
+| `OPENAI_BASE_URL` | Override API endpoint (optional) | |
+| `WHISPLAY_ENABLE_SIMULATION` | `1` to run without Pi hardware | `0` |
+| `WHISPLAY_PERSONA_MODE` | `random`, `rotate`, or `fixed` | `random` |
+| `WHISPLAY_PERSONA_NAME` | Persona name if `fixed` | |
+| `WHISPLAY_IDLE_TIMEOUT_SECONDS` | Hint cadence while idle | `180` |
+| `WHISPLAY_MAX_RECORD_SECONDS` | Recording cap | `12` |
+
+Place any custom persona definitions in a JSON file and point `WHISPLAY_PERSONAS_PATH` to it.
+
+---
+
+## Development & Testing
 
 ```bash
-systemctl restart whisplay-ai-chatbot.service
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
 ```
 
-## Display Battery Level
+To run the chatbot with live hardware from your dev machine, set `WHISPLAY_ENABLE_SIMULATION=0` and ensure you have the Whisplay HAT drivers (`RPi.GPIO`, `spidev`) available.
 
-The battery level display depends on the pisugar-power-manager. If you are using PiSugar2 or PiSugar3, you need to install the pisugar-power-manager first. You can find the installation instructions in the [PiSugar Power Manager repository](https://github.com/PiSugar/pisugar-power-manager-rs).
+---
 
-Or use the following command to install it:
+## Fun Experiments
 
-```bash
-wget https://cdn.pisugar.com/release/pisugar-power-manager.sh
-bash pisugar-power-manager.sh -c release
-```
+- Ask “Tell me a retro joke” to trigger Arcade Ally puns.
+- Try “Narrate a space bedtime story” for stargazing lore.
+- Request haiku or limericks to hear the Byte-Sized Bard rhyme.
+- Leave the bot idle to get playful tips on what to ask next.
 
-## Enclosure
-
-[Whisplay Chatbot Case](https://github.com/PiSugar/suit-cases/tree/main/pisugar3-whisplay-chatbot)
-
-## Goals
-
-- Integrate the tool with the API ✅
-- Enable the AI assistant to adjust the volume autonomously ✅
-- Reset the conversation history if there is no speech for five minutes ✅
-- Support local llm server ✅
-- Refactor python render thread, better performance ✅
-- Add Google Gemini API support ✅
-- RPI camera support
-- Support speaker recognition
+---
 
 ## License
 
-[GPL-3.0](https://github.com/PiSugar/whisplay-ai-chatbot?tab=GPL-3.0-1-ov-file#readme)
+GPL-3.0-or-later — see [`LICENSE`](LICENSE). Contributions welcome! Open a PR with your persona ideas, idle animations, or new hardware tricks.

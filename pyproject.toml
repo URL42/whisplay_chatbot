@@ -1,0 +1,56 @@
+[project]
+name = "whisplay-chatbot"
+version = "0.1.0"
+description = "All-Python Whisplay AI Chatbot for Raspberry Pi Zero 2W with PiSugar Whisplay HAT"
+readme = "README.md"
+authors = [
+  { name = "ZeroRez Labs" }
+]
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=1.42.0",
+  "httpx>=0.27.0",
+  "pydantic>=2.8.0",
+  "pydantic-settings>=2.2.1",
+  "python-dotenv>=1.0.1",
+  "rich>=13.7.1",
+  "numpy>=1.26.4",
+  "pillow>=10.2.0",
+  "cairosvg>=2.7.1",
+  "async-timeout>=4.0.3",
+  "tenacity>=8.3.0",
+  "typer>=0.12.3",
+  "aiofiles>=23.2.1",
+  "uvicorn>=0.30.0",
+]
+
+[project.optional-dependencies]
+pi = [
+  "RPi.GPIO>=0.7.1; sys_platform == 'linux'",
+  "spidev>=3.6; sys_platform == 'linux'",
+]
+dev = [
+  "pytest>=8.2.0",
+  "pytest-asyncio>=0.23.6",
+  "ruff>=0.5.0",
+]
+
+[project.scripts]
+whisplay-chatbot = "whisplay_chatbot.cli:app"
+
+[tool.uv]
+dev-dependencies = ["whisplay-chatbot[dev]"]
+
+[tool.uv.workspace]
+members = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

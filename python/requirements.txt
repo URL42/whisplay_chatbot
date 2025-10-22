@@ -1,4 +1,0 @@
-Pillow
-cairosvg
-numpy
-spidev
