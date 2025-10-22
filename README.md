@@ -50,7 +50,7 @@ Press `Enter` once to simulate a button press, then again to release. Watch the 
 
 2. **Clone & install**
    ```bash
-   git clone https://github.com/PiSugar/whisplay-ai-chatbot.git
+   git clone https://github.com/URL42/whisplay_chatbot.git
    cd whisplay-ai-chatbot
    uv sync --all-extras
    ```
