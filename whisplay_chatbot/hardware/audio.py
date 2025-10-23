@@ -77,6 +77,48 @@ class AudioManager:
         self._current_recording = recording
         return recording
 
+    async def play_startup_chime(self) -> None:
+        if self.simulate:
+            logger.info("[SIM] Startup chime skipped (simulation mode)")
+            return
+
+        cmd = [
+            "sox",
+            "-n",
+            "-t",
+            "alsa",
+            "default",
+            "synth",
+            "0.35",
+            "sin",
+            "880",
+            "fade",
+            "q",
+            "0.02",
+            "0.35",
+            "0.1",
+        ]
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            logger.debug("SoX not available; skipping startup chime")
+            return
+
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            logger.debug(
+                "Startup chime failed (code=%s): %s",
+                process.returncode,
+                (stderr or b"").decode(errors="ignore"),
+            )
+        else:
+            if stdout:
+                logger.debug("Startup chime stdout: %s", stdout.decode(errors="ignore"))
+
     async def record_with_timeout(self, output_path: Path, max_duration: int) -> Path:
         recording = await self.start_manual_recording(output_path)
         try:

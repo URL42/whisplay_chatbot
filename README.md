@@ -69,6 +69,8 @@ uv run whisplay-chatbot run
 Hold the Whisplay button, speak, release, and enjoy!
 
 > Tip: The CLI entry point is published as `whisplay-chatbot`. Use `uv run whisplay-chatbot run` (or `uv run python -m whisplay_chatbot.cli run`) rather than invoking `app.py` directly.
+>
+> Logs are written to `data/whisplay.log`; run `tail -f data/whisplay.log` to watch them live.
 
 ---
 

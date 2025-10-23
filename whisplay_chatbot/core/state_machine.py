@@ -73,6 +73,14 @@ class ChatFlow:
         await self.components.led.start()
         await self.components.controls.start()
         await self.components.audio.start()
+        await self._play_startup_chime()
+        logger.info("Startup complete; waiting for button press")
+
+    async def _play_startup_chime(self) -> None:
+        try:
+            await self.components.audio.play_startup_chime()
+        except Exception:  # pragma: no cover - chime is best-effort
+            logger.debug("Startup chime errored", exc_info=True)
 
     async def run(self) -> None:
         await self.start()

@@ -8,7 +8,7 @@ import asyncio
 import logging
 from contextlib import suppress
 
-from .config import get_settings
+from .config import DATA_DIR, get_settings
 from .core import ChatFlow, ChatFlowComponents, ConversationHistory, PersonaManager
 from .hardware import (
     AudioManager,
@@ -25,10 +25,17 @@ logger = logging.getLogger(__name__)
 async def run_chatbot() -> None:
     settings = get_settings()
 
+    logfile = DATA_DIR / "whisplay.log"
+    logfile.parent.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(logfile, encoding="utf-8"),
+        ],
     )
+    logger.info("Starting Whisplay chatbot (simulation=%s)", settings.enable_simulation)
 
     board = create_board(force_mock=settings.enable_simulation)
     display = DisplayController(board)
