@@ -5,12 +5,18 @@ Real Whisplay board implementation extracted from the legacy project.
 from __future__ import annotations
 
 import time
+import contextlib
+import logging
+import threading
+from typing import Optional
 
 try:
     import RPi.GPIO as GPIO  # type: ignore
     import spidev  # type: ignore
 except Exception as exc:  # pragma: no cover
     raise RuntimeError("RPi.GPIO and spidev must be installed on the Raspberry Pi") from exc
+
+logger = logging.getLogger(__name__)
 
 
 class WhisplayBoard:
@@ -51,7 +57,22 @@ class WhisplayBoard:
         GPIO.setup(self.BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         self.button_press_callback = None
         self.button_release_callback = None
-        GPIO.add_event_detect(self.BUTTON_PIN, GPIO.BOTH, callback=self._button_event, bouncetime=50)
+        self._poll_thread: Optional[threading.Thread] = None
+        self._poll_stop = threading.Event()
+        self._use_polling = False
+
+        try:
+            GPIO.add_event_detect(
+                self.BUTTON_PIN, GPIO.BOTH, callback=self._button_event, bouncetime=50
+            )
+        except RuntimeError as exc:
+            logger.warning(
+                "GPIO edge detection unavailable (%s); falling back to polling mode.", exc
+            )
+            self._use_polling = True
+            self._last_button_state = self.button_pressed()
+            self._poll_thread = threading.Thread(target=self._poll_button_loop, daemon=True)
+            self._poll_thread.start()
 
         self.spi = spidev.SpiDev()
         self.spi.open(0, 0)
@@ -219,8 +240,26 @@ class WhisplayBoard:
             self._button_release_event(channel)
 
     def cleanup(self):
+        if self._use_polling:
+            self._poll_stop.set()
+            if self._poll_thread and self._poll_thread.is_alive():
+                self._poll_thread.join(timeout=0.5)
+        else:
+            with contextlib.suppress(RuntimeError):
+                GPIO.remove_event_detect(self.BUTTON_PIN)
         self.spi.close()
         self.red_pwm.stop()
         self.green_pwm.stop()
         self.blue_pwm.stop()
         GPIO.cleanup()
+
+    def _poll_button_loop(self):
+        while not self._poll_stop.is_set():
+            state = self.button_pressed()
+            if state != self._last_button_state:
+                if state:
+                    self._button_press_event(self.BUTTON_PIN)
+                else:
+                    self._button_release_event(self.BUTTON_PIN)
+                self._last_button_state = state
+            time.sleep(0.02)
