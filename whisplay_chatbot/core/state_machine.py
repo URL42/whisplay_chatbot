@@ -8,7 +8,7 @@ import asyncio
 import contextlib
 import logging
 import random
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -126,7 +126,7 @@ class ChatFlow:
             persona_name=persona.config.name,
             scroll_speed=3,
         )
-        await self.components.display.update(**display_state.__dict__)
+        await self.components.display.update(**asdict(display_state))
         await self.components.led.set_state(persona.led_color, mode="breathing")
 
         if self._idle_hint_task:
