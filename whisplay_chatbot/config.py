@@ -12,9 +12,9 @@ from pydantic import BaseModel, Field, HttpUrl, PositiveInt, validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-LEGACY_PYTHON_DIR = PROJECT_ROOT / "python"
 DEFAULT_ASSET_DIR = PROJECT_ROOT / "assets"
-DEFAULT_EMOJI_DIR = LEGACY_PYTHON_DIR / "emoji_svg"
+LEGACY_ASSET_DIR = PROJECT_ROOT / "python"  # backwards compat for older layouts
+DEFAULT_EMOJI_DIR = DEFAULT_ASSET_DIR / "emoji_svg"
 
 FONT_CANDIDATES = [
     DEFAULT_ASSET_DIR / "fonts" / "NotoSans-Regular.ttf",
@@ -25,7 +25,7 @@ FONT_CANDIDATES = [
 
 LOGO_CANDIDATES = [
     DEFAULT_ASSET_DIR / "img" / "logo.png",
-    LEGACY_PYTHON_DIR / "img" / "logo.png",
+    LEGACY_ASSET_DIR / "img" / "logo.png",
 ]
 
 
@@ -37,7 +37,9 @@ def _resolve_first_existing(paths: list[Path]) -> Path:
 
 
 ASSET_DIR = DEFAULT_ASSET_DIR
-EMOJI_DIR = DEFAULT_EMOJI_DIR if DEFAULT_EMOJI_DIR.exists() else DEFAULT_ASSET_DIR / "emoji_svg"
+EMOJI_DIR = (
+    DEFAULT_EMOJI_DIR if DEFAULT_EMOJI_DIR.exists() else LEGACY_ASSET_DIR / "emoji_svg"
+)
 FONT_PATH = _resolve_first_existing(FONT_CANDIDATES)
 LOGO_PATH = _resolve_first_existing(LOGO_CANDIDATES)
 DATA_DIR = PROJECT_ROOT / "data"

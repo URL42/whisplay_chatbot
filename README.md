@@ -51,7 +51,7 @@ Press `Enter` once to simulate a button press, then again to release. Watch the 
 2. **Clone & install**
    ```bash
    git clone https://github.com/URL42/whisplay_chatbot.git
-   cd whisplay-ai-chatbot
+   cd whisplay_chatbot
    uv sync --all-extras
    ```
 
@@ -62,11 +62,13 @@ Press `Enter` once to simulate a button press, then again to release. Watch the 
    ```
 
 4. **Run**
-   ```bash
-   uv run whisplay-chatbot run
-   ```
+```bash
+uv run whisplay-chatbot run
+```
 
-   Hold the Whisplay button, speak, release, and enjoy!
+Hold the Whisplay button, speak, release, and enjoy!
+
+> Tip: The CLI entry point is published as `whisplay-chatbot`. Use `uv run whisplay-chatbot run` (or `uv run python -m whisplay_chatbot.cli run`) rather than invoking `app.py` directly.
 
 ---
 
@@ -83,8 +85,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/whisplay-ai-chatbot
-EnvironmentFile=/home/pi/whisplay-ai-chatbot/.env
+WorkingDirectory=/home/pi/whisplay_chatbot
+EnvironmentFile=/home/pi/whisplay_chatbot/.env
 ExecStart=/home/pi/.local/bin/uv run whisplay-chatbot run
 Restart=on-failure
 
