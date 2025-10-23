@@ -33,10 +33,10 @@ Hold the button, speak your mind, and the bot answers back with a playful person
 uv sync --all-extras
 cp .env.example .env
 echo "OPENAI_API_KEY=sk-your-key" >> .env
-uv run whisplay-chatbot simulate
+uv run -- whisplay-chatbot simulate
 ```
 
-Press `Enter` once to simulate a button press, then again to release. Watch the terminal for logs and check `data/` for generated audio if you enabled simulation dumps.
+Press `Enter` once to simulate a button press, then again to release. Logs are written to `data/logs/whisplay.log`; follow them with `tail -f data/logs/whisplay.log`. Simulation audio dumps land in `data/`.
 
 ---
 
@@ -52,7 +52,7 @@ Press `Enter` once to simulate a button press, then again to release. Watch the 
    ```bash
    git clone https://github.com/URL42/whisplay_chatbot.git
    cd whisplay_chatbot
-   uv sync --all-extras
+   uv sync --group pi --all-extras
    ```
 
 3. **Environment**
@@ -62,15 +62,14 @@ Press `Enter` once to simulate a button press, then again to release. Watch the 
    ```
 
 4. **Run**
-```bash
-uv run whisplay-chatbot run
-```
+   ```bash
+   uv run -- whisplay-chatbot run
+   # or: uv run -- python -m whisplay_chatbot.main run
+   ```
 
-Hold the Whisplay button, speak, release, and enjoy!
+Hold the Whisplay button, speak, release, and enjoy! Add `--simulate` to the command if you need to force keyboard mode.
 
-> Tip: The CLI entry point is published as `whisplay-chatbot`. Use `uv run whisplay-chatbot run` (or `uv run python -m whisplay_chatbot.cli run`) rather than invoking `app.py` directly.
->
-> Logs are written to `data/whisplay.log`; run `tail -f data/whisplay.log` to watch them live.
+> Tip: Logs are stored in `data/logs/whisplay.log`. Stream them with `tail -f data/logs/whisplay.log`.
 
 ---
 
@@ -89,7 +88,7 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/whisplay_chatbot
 EnvironmentFile=/home/pi/whisplay_chatbot/.env
-ExecStart=/home/pi/.local/bin/uv run whisplay-chatbot run
+ExecStart=/home/pi/.local/bin/uv run -- whisplay-chatbot run
 Restart=on-failure
 
 [Install]
@@ -118,6 +117,9 @@ Logs stream under `journalctl -u whisplay-chatbot -f`.
 | `WHISPLAY_PERSONA_NAME` | Persona name if `fixed` | |
 | `WHISPLAY_IDLE_TIMEOUT_SECONDS` | Hint cadence while idle | `180` |
 | `WHISPLAY_MAX_RECORD_SECONDS` | Recording cap | `12` |
+| `WHISPLAY_TTS_VOICE` | Preferred OpenAI voice for playback | `alloy` |
+| `WHISPLAY_LOG_LEVEL` | Logging verbosity | `INFO` |
+| `WHISPLAY_LOG_DIR` | Directory for log files | `data/logs` |
 
 Place any custom persona definitions in a JSON file and point `WHISPLAY_PERSONAS_PATH` to it.
 

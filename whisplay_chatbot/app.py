@@ -1,75 +1,60 @@
 """
-Entry point to launch the Whisplay chatbot.
+Async runtime entry for the Whisplay chatbot.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from contextlib import suppress
+from pathlib import Path
+from typing import Optional
 
-from .config import DATA_DIR, get_settings
-from .core import ChatFlow, ChatFlowComponents, ConversationHistory, PersonaManager
-from .hardware import (
-    AudioManager,
-    ControlManager,
-    DisplayController,
-    LedAnimator,
-    create_board,
-)
-from .services import OpenAIChatModel, OpenAITranscriber, OpenAITts
+from .config import ChatbotSettings, DATA_DIR, get_settings
+from .core import ChatFlow
+from .hardware.board import MockBoard
+from .logging_utils import configure_logging
+from .runtime import build_runtime
 
 logger = logging.getLogger(__name__)
 
 
-async def run_chatbot() -> None:
-    settings = get_settings()
+async def run_chatbot(
+    *,
+    simulate_override: Optional[bool] = None,
+    log_level: Optional[str] = None,
+    log_file: Optional[Path] = None,
+) -> None:
+    """
+    Bootstraps the chatbot and starts the asynchronous chat flow.
+    """
 
-    logfile = DATA_DIR / "whisplay.log"
-    logfile.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s %(name)s: %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(logfile, encoding="utf-8"),
-        ],
-    )
-    logger.info("Starting Whisplay chatbot (simulation=%s)", settings.enable_simulation)
+    settings = _load_settings(simulate_override=simulate_override)
 
-    board = create_board(force_mock=settings.enable_simulation)
-    display = DisplayController(board)
-    led = LedAnimator(board)
-    controls = ControlManager(board, simulate=settings.enable_simulation)
-    audio = AudioManager(simulate=settings.enable_simulation)
-    transcriber = OpenAITranscriber()
-    llm = OpenAIChatModel()
-    tts = OpenAITts()
-    persona_manager = PersonaManager()
-    history = ConversationHistory()
+    log_dir = getattr(settings, "log_dir", DATA_DIR / "logs")
+    level = log_level or getattr(settings, "log_level", None)
+    log_path = configure_logging(log_dir=log_dir, log_level=level, log_file=log_file)
+    logger.info("Logging to %s", log_path)
 
-    components = ChatFlowComponents(
-        display=display,
-        controls=controls,
-        led=led,
-        audio=audio,
-        transcriber=transcriber,
-        llm=llm,
-        tts=tts,
-        persona_manager=persona_manager,
-        history=history,
-        settings=settings,
-    )
+    runtime = build_runtime(settings)
+    if runtime.using_mock_board:
+        logger.warning(
+            "Mock Whisplay board active. Set WHISPLAY_ENABLE_SIMULATION=0 on hardware."
+        )
+    else:
+        logger.info("Whisplay hardware board initialised successfully.")
 
-    chat_flow = ChatFlow(components)
-
+    chat_flow = ChatFlow(runtime.components)
     loop = asyncio.get_running_loop()
 
-    async def shutdown():
+    async def shutdown() -> None:
         logger.info("Shutting down chatbot...")
         await chat_flow.stop()
         with suppress(Exception):
-            board.cleanup()
+            cleanup = getattr(runtime.board, "cleanup", None)
+            if callable(cleanup):
+                cleanup()
         for task in asyncio.all_tasks(loop):
             if task is asyncio.current_task(loop):
                 continue
@@ -82,7 +67,15 @@ async def run_chatbot() -> None:
                 lambda s=signal_name: asyncio.create_task(shutdown()),
             )
 
+    logger.info("Startup complete; awaiting interactions (simulation=%s)", settings.enable_simulation)
     await chat_flow.run()
+
+
+def _load_settings(*, simulate_override: Optional[bool]) -> ChatbotSettings:
+    if simulate_override is not None:
+        os.environ["WHISPLAY_ENABLE_SIMULATION"] = "1" if simulate_override else "0"
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    return get_settings()
 
 
 def main() -> None:

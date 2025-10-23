@@ -37,13 +37,11 @@ dev = [
 ]
 
 [project.scripts]
-whisplay-chatbot = "whisplay_chatbot.cli:app"
+whisplay-chatbot = "whisplay_chatbot.main:app"
 
 [tool.uv]
+workspace = { members = ["."] }
 dev-dependencies = ["whisplay-chatbot[dev]"]
-
-[tool.uv.workspace]
-members = ["."]
 
 [tool.ruff]
 line-length = 100

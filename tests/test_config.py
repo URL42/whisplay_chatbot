@@ -8,3 +8,5 @@ def test_settings_load_defaults(monkeypatch):
     settings = get_settings()
     assert settings.openai_api_key == "sk-test"
     assert settings.enable_simulation is True
+    assert settings.log_level == "INFO"
+    assert settings.log_dir.name == "logs"

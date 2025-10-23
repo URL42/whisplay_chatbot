@@ -43,6 +43,7 @@ EMOJI_DIR = (
 FONT_PATH = _resolve_first_existing(FONT_CANDIDATES)
 LOGO_PATH = _resolve_first_existing(LOGO_CANDIDATES)
 DATA_DIR = PROJECT_ROOT / "data"
+LOG_DIR = DATA_DIR / "logs"
 
 
 class PersonaConfig(BaseModel):
@@ -82,6 +83,8 @@ class ChatbotSettings(BaseSettings):
         default=None, alias="WHISPLAY_PERSONAS_PATH"
     )
     fun_fact_url: Optional[str] = Field(default=None, alias="WHISPLAY_FUN_FACT_URL")
+    log_level: str = Field(default="INFO", alias="WHISPLAY_LOG_LEVEL")
+    log_dir: Path = Field(default=LOG_DIR, alias="WHISPLAY_LOG_DIR")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -89,6 +92,10 @@ class ChatbotSettings(BaseSettings):
     def _expand_persona_path(cls, value: Optional[Path]) -> Optional[Path]:
         if value is None:
             return value
+        return Path(value).expanduser()
+
+    @validator("log_dir")
+    def _expand_log_dir(cls, value: Path) -> Path:
         return Path(value).expanduser()
 
     @property
@@ -104,6 +111,7 @@ class ChatbotSettings(BaseSettings):
 def get_settings() -> ChatbotSettings:
     settings = ChatbotSettings()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    settings.log_dir.mkdir(parents=True, exist_ok=True)
     return settings
 
 
