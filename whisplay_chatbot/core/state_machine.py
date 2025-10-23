@@ -60,6 +60,16 @@ class ChatFlow:
         self._running = True
 
         await self.components.display.start()
+        await self.components.display.update(
+            status="Booting",
+            emoji="🤖",
+            text="Whisplay is warming up. Get ready to press the button!",
+            accent_color="#19C3FF",
+            brightness=90,
+            scroll_speed=2,
+        )
+        await self.components.led.set_state((25, 120, 255), mode="pulse")
+
         await self.components.led.start()
         await self.components.controls.start()
         await self.components.audio.start()
