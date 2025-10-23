@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import random
 from dataclasses import dataclass
 from datetime import datetime
@@ -23,6 +24,9 @@ from ..hardware import (
 from ..services import OpenAIChatModel, OpenAITranscriber, OpenAITts
 from .history import ConversationHistory, HistoryEntry
 from .persona import PersonaManager, PersonaState
+
+
+logger = logging.getLogger(__name__)
 
 
 FUN_IDLE_LINES = [

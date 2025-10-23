@@ -36,7 +36,12 @@ def _load_real_board() -> Optional["WhisplayBoard"]:
     try:
         from ._whisplay_impl import WhisplayBoard  # type: ignore
     except Exception as exc:  # pragma: no cover - executed on dev machines
-        logger.debug("Falling back to mock Whisplay board: %s", exc)
+        logger.warning(
+            "Unable to import Whisplay hardware drivers (RPi.GPIO/spidev). "
+            "Falling back to mock board. Install pi extras via `uv sync --group pi --all-extras`. "
+            "Reason: %s",
+            exc,
+        )
         return None
     try:
         board = WhisplayBoard()
