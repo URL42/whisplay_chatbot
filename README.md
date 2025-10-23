@@ -33,7 +33,7 @@ Hold the button, speak your mind, and the bot answers back with a playful person
 uv sync --all-extras
 cp .env.example .env
 echo "OPENAI_API_KEY=sk-your-key" >> .env
-uv run -- whisplay-chatbot simulate
+uv run -- python -m whisplay_chatbot simulate
 ```
 
 Press `Enter` once to simulate a button press, then again to release. Logs are written to `data/logs/whisplay.log`; follow them with `tail -f data/logs/whisplay.log`. Simulation audio dumps land in `data/`.
@@ -63,8 +63,7 @@ Press `Enter` once to simulate a button press, then again to release. Logs are w
 
 4. **Run**
    ```bash
-   uv run -- whisplay-chatbot run
-   # or: uv run -- python -m whisplay_chatbot.main run
+   uv run -- python -m whisplay_chatbot run
    ```
 
 Hold the Whisplay button, speak, release, and enjoy! Add `--simulate` to the command if you need to force keyboard mode.
@@ -88,7 +87,7 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/whisplay_chatbot
 EnvironmentFile=/home/pi/whisplay_chatbot/.env
-ExecStart=/home/pi/.local/bin/uv run -- whisplay-chatbot run
+ExecStart=/home/pi/.local/bin/uv run -- python -m whisplay_chatbot run
 Restart=on-failure
 
 [Install]
